@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
             type: "progress",
-            message: "🚀 Creating Daytona sandbox..."
+            message: "🚀 Creating sandbox environment..."
           })}\n\n`)
         );
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
             type: "progress",
-            message: "📦 Installing Claude Code SDK..."
+            message: "📦 Installing LLM SDK..."
           })}\n\n`)
         );
 
@@ -84,13 +84,13 @@ export async function POST(req: NextRequest) {
         );
 
         if (installResult.exitCode !== 0) {
-          throw new Error("Failed to install Claude Code SDK");
+          throw new Error("Failed to install LLM SDK");
         }
 
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
             type: "progress",
-            message: "✓ Claude Code SDK installed"
+            message: "✓ LLM SDK installed"
           })}\n\n`)
         );
 
@@ -170,7 +170,7 @@ SCRIPT_EOF`,
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
             type: "progress",
-            message: "🤖 Starting Claude AI generation..."
+            message: "🤖 Starting AI generation..."
           })}\n\n`)
         );
 
