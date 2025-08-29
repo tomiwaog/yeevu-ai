@@ -139,7 +139,7 @@ export default function HostingOptions({ sandboxId, previewUrl, onHostingComplet
   }
 
   return (
-    <div className="w-full h-full px-4 py-2 flex flex-col">
+    <div className="w-full h-full px-4 py-2 flex flex-col max-h-full overflow-hidden">
       {/* Header */}
       <div className="text-center mb-4 flex-shrink-0">
         <h2 className="text-xl font-bold text-white mb-1">Your website is ready! 🎉</h2>
@@ -147,7 +147,7 @@ export default function HostingOptions({ sandboxId, previewUrl, onHostingComplet
       </div>
 
       {/* Preview */}
-      <div className="bg-gray-900 rounded-xl p-2 mb-3 flex-1 min-h-0">
+      <div className="bg-gray-900 rounded-xl p-2 mb-3 flex-1 min-h-0 max-h-[calc(100vh-400px)]">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-white">Preview</h3>
           <a
@@ -159,11 +159,12 @@ export default function HostingOptions({ sandboxId, previewUrl, onHostingComplet
             Open <ExternalLink className="w-3 h-3" />
           </a>
         </div>
-        <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
+        <div className="h-full rounded-lg overflow-hidden">
           <iframe
             src={previewUrl}
-            className="w-full h-full border-0"
             title="Website Preview"
+            width="100%"
+            height="100%"
           />
         </div>
       </div>

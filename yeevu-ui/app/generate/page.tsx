@@ -173,7 +173,7 @@ export default function GeneratePage() {
         {/* Left side - Messages */}
         <div className="w-full lg:w-[30%] bg-gray-950 border-r border-gray-800 flex flex-col">
           {/* Messages Header */}
-          <div className="p-4 border-b border-gray-800 flex-shrink-0">
+<div className="p-4 pt-20 border-b border-gray-800 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold text-white">Yeevu AI Progress</h2>
               <div className="flex items-center gap-2">
@@ -357,12 +357,13 @@ export default function GeneratePage() {
                     Open in new tab <ExternalLink className="w-3 h-3" />
                   </a>
               </div>
-              <div className="h-full bg-gray-800 relative">
+              <div className="h-full relative">
                 <iframe
                   src={previewUrl}
-                  className="w-full h-full border-0"
                   title="Website Preview"
                   loading="lazy"
+                  width="100%"
+                  height="100%"
                 />
                 {/* Loading overlay */}
                 <div className="absolute inset-0 bg-gray-800 flex items-center justify-center iframe-loading">
