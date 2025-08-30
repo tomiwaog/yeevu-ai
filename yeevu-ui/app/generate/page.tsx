@@ -7,7 +7,7 @@ import HostingOptions from "@/components/HostingOptions";
 import { ExternalLink } from "lucide-react";
 
 interface Message {
-  type: "claude_message" | "tool_use" | "tool_result" | "progress" | "error" | "complete";
+  type: "claude_message" | "tool_use" | "tool_result" | "progress" | "error" | "complete" | "backend_log";
   content?: string;
   name?: string;
   input?: any;
@@ -15,6 +15,15 @@ interface Message {
   message?: string;
   previewUrl?: string;
   sandboxId?: string;
+  timestamp?: string;
+}
+
+interface GenerationStep {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'active' | 'completed' | 'error';
+  timestamp?: string;
 }
 
 export default function GeneratePage() {
@@ -29,6 +38,41 @@ export default function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [showHostingOptions, setShowHostingOptions] = useState(false);
   const [permanentUrl, setPermanentUrl] = useState<string | null>(null);
+  
+  // Enhanced data for left pane
+  const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([
+    { id: 'sandbox', title: 'Environment Setup', description: 'Creating isolated sandbox environment', status: 'pending' },
+    { id: 'dependencies', title: 'Installing Dependencies', description: 'Setting up Next.js, TypeScript, and Tailwind CSS', status: 'pending' },
+    { id: 'structure', title: 'Project Structure', description: 'Creating files and folder structure', status: 'pending' },
+    { id: 'components', title: 'Building Components', description: 'Generating React components and pages', status: 'pending' },
+    { id: 'styling', title: 'Applying Styles', description: 'Adding responsive design and styling', status: 'pending' },
+    { id: 'testing', title: 'Testing & Optimization', description: 'Validating functionality and performance', status: 'pending' },
+    { id: 'deployment', title: 'Starting Server', description: 'Launching development server', status: 'pending' },
+  ]);
+  const [generationStats, setGenerationStats] = useState({
+    startTime: null as Date | null,
+    endTime: null as Date | null,
+    duration: null as number | null,
+    currentStep: 0,
+    totalSteps: 7,
+    filesCreated: 0
+  });
+  const [projectInfo, setProjectInfo] = useState({
+    nodeVersion: null as string | null,
+    dependencies: [] as string[],
+    filesCreated: [] as string[],
+    packageManager: 'npm',
+    framework: 'Next.js 14',
+    language: 'TypeScript'
+  });
+  const [sandboxInfo, setSandboxInfo] = useState({
+    id: null as string | null,
+    status: 'creating' as 'creating' | 'ready' | 'error' | 'installing' | 'generating',
+    region: null as string | null,
+    resources: null as any,
+    uptime: 0
+  });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
   
@@ -53,10 +97,39 @@ export default function GeneratePage() {
     hasStartedRef.current = true;
     
     setIsGenerating(true);
+    setGenerationStats(prev => ({ ...prev, startTime: new Date() }));
+    updateGenerationStep('sandbox', 'active');
     generateWebsite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prompt, router]);
   
+  const updateGenerationStep = (stepId: string, status: 'pending' | 'active' | 'completed' | 'error', customDescription?: string) => {
+    setGenerationSteps(prev => prev.map(step => {
+      if (step.id === stepId) {
+        return { 
+          ...step, 
+          status, 
+          timestamp: status === 'completed' ? new Date().toLocaleTimeString() : step.timestamp,
+          description: customDescription || step.description
+        };
+      }
+      return step;
+    }));
+    
+    // Update current step counter
+    if (status === 'completed') {
+      setGenerationStats(prev => ({ 
+        ...prev, 
+        currentStep: Math.min(prev.currentStep + 1, prev.totalSteps)
+      }));
+    }
+  };
+
+  const getCurrentActiveStep = () => {
+    const activeStep = generationSteps.find(step => step.status === 'active');
+    return activeStep?.id || 'sandbox';
+  };
+
   const generateWebsite = async () => {
     try {
       const response = await fetch("/api/generate-daytona", {
@@ -100,12 +173,58 @@ export default function GeneratePage() {
               const message = JSON.parse(data) as Message;
               
               if (message.type === "error") {
+                updateGenerationStep(getCurrentActiveStep(), 'error');
                 throw new Error(message.message);
               } else if (message.type === "complete") {
                 setPreviewUrl(message.previewUrl || null);
                 setSandboxId(message.sandboxId || null);
+                setSandboxInfo(prev => ({ ...prev, id: message.sandboxId || null, status: 'ready' }));
+                updateGenerationStep('deployment', 'completed');
+                setGenerationStats(prev => ({ 
+                  ...prev, 
+                  endTime: new Date(),
+                  duration: prev.startTime ? Date.now() - prev.startTime.getTime() : null
+                }));
                 setIsGenerating(false);
-                setShowHostingOptions(true); // Show hosting options after generation
+                setShowHostingOptions(true);
+              } else if (message.type === "progress") {
+                // Enhanced progress tracking with step updates
+                if (message.message?.includes('sandbox') || message.message?.includes('Creating')) {
+                  updateGenerationStep('sandbox', 'completed');
+                  updateGenerationStep('dependencies', 'active');
+                } else if (message.message?.includes('Installing') || message.message?.includes('LLM SDK')) {
+                  updateGenerationStep('dependencies', 'completed');
+                  updateGenerationStep('structure', 'active');
+                } else if (message.message?.includes('generation') || message.message?.includes('AI')) {
+                  updateGenerationStep('structure', 'completed');
+                  updateGenerationStep('components', 'active');
+                } else if (message.message?.includes('development server')) {
+                  updateGenerationStep('testing', 'completed');
+                  updateGenerationStep('deployment', 'active');
+                }
+                setMessages((prev) => [...prev, message]);
+              } else if (message.type === "tool_use") {
+                // Track file operations and update steps accordingly
+                if (message.name === 'Write' && message.input?.file_path) {
+                  setGenerationStats(prev => ({ ...prev, filesCreated: prev.filesCreated + 1 }));
+                  setProjectInfo(prev => ({ 
+                    ...prev, 
+                    filesCreated: [...prev.filesCreated, message.input.file_path.split('/').pop() || ''] 
+                  }));
+                  
+                  // Update steps based on file type
+                  const fileName = message.input.file_path.split('/').pop() || '';
+                  if (fileName.includes('package.json') || fileName.includes('tsconfig')) {
+                    updateGenerationStep('structure', 'completed');
+                    updateGenerationStep('components', 'active');
+                  } else if (fileName.includes('.tsx') || fileName.includes('.jsx')) {
+                    // Continue with components
+                  } else if (fileName.includes('.css') || fileName.includes('tailwind')) {
+                    updateGenerationStep('components', 'completed');
+                    updateGenerationStep('styling', 'active');
+                  }
+                }
+                setMessages((prev) => [...prev, message]);
               } else {
                 setMessages((prev) => [...prev, message]);
               }
@@ -119,6 +238,8 @@ export default function GeneratePage() {
       console.error("Error generating website:", err);
       setError(err.message || "An error occurred");
       setIsGenerating(false);
+      setSandboxInfo(prev => ({ ...prev, status: 'error' }));
+      updateGenerationStep(getCurrentActiveStep(), 'error');
     }
   };
   
@@ -173,29 +294,109 @@ export default function GeneratePage() {
         {/* Left side - Messages */}
         <div className="w-full lg:w-[30%] bg-gray-950 border-r border-gray-800 flex flex-col">
           {/* Messages Header */}
-<div className="p-4 pt-20 border-b border-gray-800 flex-shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold text-white">Yeevu AI Progress</h2>
+          <div className="p-4 border-b border-gray-800 flex-shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-white">Generation Details</h2>
               <div className="flex items-center gap-2">
                 {isGenerating && (
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 )}
                 <span className="text-xs text-gray-400">
-                  {isGenerating ? "Generating..." : "Complete"}
+                  {sandboxInfo.status === 'creating' && '🏗️ Creating'}
+                  {sandboxInfo.status === 'installing' && '📦 Installing'}
+                  {sandboxInfo.status === 'generating' && '🤖 Generating'}
+                  {sandboxInfo.status === 'ready' && '✅ Ready'}
+                  {sandboxInfo.status === 'error' && '❌ Error'}
                 </span>
               </div>
             </div>
             
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="bg-gray-900 rounded-lg p-2 border border-gray-800">
+                <div className="text-xs text-gray-400 mb-1">Files Created</div>
+                <div className="text-sm font-semibold text-white">{generationStats.filesCreated}</div>
+              </div>
+              <div className="bg-gray-900 rounded-lg p-2 border border-gray-800">
+                <div className="text-xs text-gray-400 mb-1">Duration</div>
+                <div className="text-sm font-semibold text-white">
+                  {generationStats.duration ? `${Math.round(generationStats.duration / 1000)}s` : '-'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Sandbox Info */}
+            {sandboxInfo.id && (
+              <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-800 mb-3">
+                <div className="text-xs text-gray-400 mb-1">Sandbox</div>
+                <div className="text-xs font-mono text-gray-300">{sandboxInfo.id.slice(0, 12)}...</div>
+                <div className="text-xs text-gray-500">{projectInfo.framework} • {projectInfo.language}</div>
+              </div>
+            )}
+            
             {/* Progress Bar */}
             {isGenerating && (
-              <div className="w-full bg-gray-800 rounded-full h-1">
-                <div className="bg-blue-600 h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mb-2">
+                <div 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(90, (generationStats.currentStep / generationStats.totalSteps) * 100)}%` }}
+                ></div>
               </div>
             )}
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4">
+          {/* Progress Tabs */}
+          <div className="px-4 py-2 border-b border-gray-800">
+            <div className="flex gap-4 text-xs">
+              <button className="text-blue-400 border-b border-blue-400 pb-1">Generation Steps</button>
+              <button className="text-gray-500 hover:text-gray-400">AI Messages</button>
+            </div>
+          </div>
+          
+          {/* Messages & Logs */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Generation Steps Section */}
+            <div className="p-4 border-b border-gray-800">
+              <h3 className="text-sm font-medium text-white mb-3">Generation Progress</h3>
+              <div className="space-y-2">
+                {generationSteps.map((step, index) => (
+                  <div key={step.id} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-1">
+                      {step.status === 'completed' && (
+                        <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                      {step.status === 'active' && (
+                        <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center animate-pulse">
+                          <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                        </div>
+                      )}
+                      {step.status === 'pending' && (
+                        <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">{index + 1}</span>
+                        </div>
+                      )}
+                      {step.status === 'error' && (
+                        <div className="w-5 h-5 bg-red-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✕</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white">{step.title}</div>
+                      <div className="text-xs text-gray-400">{step.description}</div>
+                      {step.timestamp && (
+                        <div className="text-xs text-gray-500 mt-1">{step.timestamp}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* AI Messages */}
+            <div className="p-4">
             {messages.map((message, index) => (
               <div key={index}>
                 {message.type === "claude_message" && (
@@ -221,6 +422,40 @@ export default function GeneratePage() {
                         <span className="font-medium">{message.name}</span>
                       </div>
                       <span className="text-gray-400 break-all text-xs">{formatToolInput(message.input)}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {message.type === "tool_result" && (
+                  <div className="bg-green-900/20 rounded-lg p-3 border border-green-800/30 overflow-hidden">
+                    <div className="flex items-start gap-3 text-sm">
+                      <div className="flex items-center gap-1 text-green-400 flex-shrink-0">
+                        <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                        <span className="font-medium">Result</span>
+                      </div>
+                      <span className="text-gray-400 break-all text-xs">
+                        {message.result && typeof message.result === 'string' 
+                          ? message.result.length > 100 
+                            ? `${message.result.substring(0, 100)}... (${message.result.length} chars)`
+                            : message.result
+                          : `${JSON.stringify(message.result).substring(0, 100)}...`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {message.type === "backend_log" && (
+                  <div className="bg-purple-900/20 rounded-lg p-2 border border-purple-800/30 overflow-hidden">
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="flex items-center gap-1 text-purple-400 flex-shrink-0">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">•</span>
+                        </div>
+                      </div>
+                      <span className="text-gray-400 break-all">{message.message}</span>
                     </div>
                   </div>
                 )}
@@ -258,6 +493,7 @@ export default function GeneratePage() {
             )}
             
             <div ref={messagesEndRef} />
+            </div>
           </div>
           
           {/* Input Section */}

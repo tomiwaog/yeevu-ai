@@ -20,7 +20,7 @@ async function testPreviewUrl() {
   try {
     console.log("1. Creating sandbox...");
     const sandbox = await daytona.create({
-      public: true, // Make it publicly accessible
+      public: false, // Try private first to test basic functionality
     });
     console.log(`✓ Sandbox created: ${sandbox.id}`);
 

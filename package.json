@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cd yeevu-ui && npm run dev",
+    "build": "cd yeevu-ui && npm run build",
+    "start": "cd yeevu-ui && npm run start"
   },
   "keywords": [],
   "author": "",
@@ -12,11 +15,8 @@
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.39",
     "@types/node": "^24.0.10",
+    "adm-zip": "^0.5.16",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3",
-    "adm-zip": "^0.5.16"
-  },
-  "devDependencies": {
-    "@types/adm-zip": "^0.5.8"
+    "typescript": "^5.8.3"
   }
 }
