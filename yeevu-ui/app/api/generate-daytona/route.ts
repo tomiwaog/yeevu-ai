@@ -568,6 +568,9 @@ SCRIPT_EOF`,
           }
         }
         
+        // If app/page.tsx is missing, this indicates Claude Code failed to generate the main page
+        // We should fail the generation and let the user know, rather than create generic content
+        
         // Report validation results
         if (missingFiles.length > 0) {
           console.error('[API] MISSING REQUIRED FILES:', missingFiles);
