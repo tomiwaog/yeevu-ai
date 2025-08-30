@@ -1,5 +1,3 @@
-# Create a simple download script
-cat > /home/tee/lovable-clone/yeevu-ui/scripts/download-simple.ts << 'EOF'
 import { Daytona } from "@daytonaio/sdk";
 import * as dotenv from "dotenv";
 import * as path from "path";
@@ -66,7 +64,7 @@ async function downloadSimple(sandboxId: string, localPath: string = "./simple-p
         
         fs.writeFileSync(localFilePath, contentResult.result || '');
         console.log(`✓ Downloaded: ${file}`);
-      } catch (error) {
+      } catch (error: any) {
         console.log(`❌ Failed to download ${file}: ${error.message}`);
       }
     }
@@ -96,4 +94,3 @@ async function main() {
 }
 
 main();
-EOF

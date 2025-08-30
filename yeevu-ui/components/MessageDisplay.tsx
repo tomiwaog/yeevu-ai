@@ -12,7 +12,6 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
     // Look for generated pages
     const pages = messages
       .filter((m: any) => 
-        m.type === 'tool_use' && 
         m.name === 'Write' && 
         m.input?.file_path?.includes('/app/') &&
         (m.input?.file_path?.endsWith('.tsx') || m.input?.file_path?.endsWith('/page.tsx'))
@@ -22,16 +21,16 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
         const match = path.match(/\/app\/([^\/]+)\//);
         return match ? `/${match[1]}` : null;
       })
-      .filter(Boolean);
+      .filter((page): page is string => page !== null);
     
     setGeneratedPages([...new Set(pages)]);
   }, [messages]);
   
   if (messages.length === 0) return null;
   
-  // Filter to show only assistant messages and tool uses
+  // Filter to show only relevant message types
   const displayMessages = messages.filter(m => 
-    m.type === 'assistant' || m.type === 'tool_use' || m.type === 'result'
+    m.type === 'result' || (m as any).name || (m as any).message
   );
   
   return (
@@ -59,7 +58,7 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
         <div className="space-y-3">
           {displayMessages.map((message, index) => {
             // Assistant messages
-            if (message.type === 'assistant' && (message as any).message?.content) {
+            if ((message as any).message?.content) {
               const content = (message as any).message.content;
               const textContent = Array.isArray(content) 
                 ? content.find((c: any) => c.type === 'text')?.text 
@@ -76,8 +75,8 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
               );
             }
             
-            // Tool uses - show as compact status
-            if (message.type === 'tool_use') {
+            // Tool uses - show as compact status  
+            if ((message as any).name) {
               const toolName = (message as any).name;
               const input = (message as any).input;
               

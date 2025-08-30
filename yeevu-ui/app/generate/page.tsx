@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import HostingOptions from "@/components/HostingOptions";
@@ -26,7 +26,7 @@ interface GenerationStep {
   timestamp?: string;
 }
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const prompt = searchParams.get("prompt") || "";
@@ -623,5 +623,17 @@ export default function GeneratePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={
+      <main className="h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </main>
+    }>
+      <GeneratePageContent />
+    </Suspense>
   );
 }

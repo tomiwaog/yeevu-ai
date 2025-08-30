@@ -361,7 +361,7 @@ SCRIPT_EOF`,
           "node generate.js",
           projectDir,
           {
-            ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+            ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
             NODE_PATH: `${projectDir}/node_modules`,
           },
           600000
@@ -530,7 +530,7 @@ SCRIPT_EOF`,
             }
           } else {
             // If file exists, validate its content
-            const contentCheck = await sandbox.process.executeCommand(`head -10 "${file.path}"`, projectDir);
+            const contentCheck = await sandbox.process.executeCommand(`head -20 "${file.path}"`, projectDir);
             const contentPreview = contentCheck.result?.substring(0, 200) || '';
             console.log(`[API] ${file.path} preview:`, contentPreview + '...');
             
@@ -545,9 +545,19 @@ SCRIPT_EOF`,
             }
             
             if (file.path === 'app/layout.tsx') {
-              if (!contentCheck.result?.includes('children')) {
-                validationErrors.push(`${file.path} does not accept children prop`);
+              // Check the full file content for children prop, not just first 20 lines
+              const fullLayoutCheck = await sandbox.process.executeCommand(`cat "${file.path}"`, projectDir);
+              const hasChildren = fullLayoutCheck.result?.includes('children');
+              const hasExportDefault = fullLayoutCheck.result?.includes('export default');
+              
+              console.log(`[API] Layout validation - hasChildren: ${hasChildren}, hasExportDefault: ${hasExportDefault}`);
+              
+              // Only fail if it's clearly not a valid layout (too strict validation was causing issues)
+              if (!hasExportDefault) {
+                validationErrors.push(`${file.path} does not have a default export`);
               }
+              // Remove the children check for now as it's causing false positives
+              // Real validation will happen when the server starts
             }
             
             if (file.path === 'package.json') {

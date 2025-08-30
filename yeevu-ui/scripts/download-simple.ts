@@ -78,7 +78,7 @@ async function downloadSimple(sandboxId: string, localPath: string = "./simple-p
         } else {
           console.log(`⚠️  Skipped: ${file} (not found)`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.log(`❌ Failed to download ${file}: ${error.message}`);
       }
     }

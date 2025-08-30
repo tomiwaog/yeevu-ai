@@ -54,7 +54,7 @@ async function downloadWorking(sandboxId: string, localPath: string = "./working
         const localFilePath = path.join(localPath, file);
         fs.writeFileSync(localFilePath, contentResult.result || '');
         console.log(`✓ Downloaded: ${file}`);
-      } catch (error) {
+      } catch (error: any) {
         console.log(`❌ Failed to download ${file}: ${error.message}`);
       }
     }
@@ -85,7 +85,7 @@ async function downloadWorking(sandboxId: string, localPath: string = "./working
         
         fs.writeFileSync(localFilePath, contentResult.result || '');
         console.log(`✓ Downloaded: ${file}`);
-      } catch (error) {
+      } catch (error: any) {
         console.log(`❌ Failed to download ${file}: ${error.message}`);
       }
     }

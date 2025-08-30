@@ -14,9 +14,9 @@ export async function generateCodeWithClaude(prompt: string): Promise<CodeGenera
     // Execute the query and collect all messages
     for await (const message of query({
       prompt: prompt,
-      abortController: abortController,
       options: {
         maxTurns: 10, // Allow multiple turns for complex builds
+        abortController: abortController,
         // Grant all necessary permissions for code generation
         allowedTools: [
           "Read",

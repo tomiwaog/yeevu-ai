@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
         
         for await (const message of query({
           prompt: prompt,
-          abortController: abortController,
           options: {
             maxTurns: 10,
+            abortController: abortController,
             allowedTools: [
               "Read",
               "Write",

@@ -15,7 +15,7 @@ async function investigateSandbox(sandboxId: string) {
     // Get the sandbox
     const sandbox = await daytona.get(sandboxId);
     console.log(`✅ Sandbox found: ${sandbox.id}`);
-    console.log(`📊 Status: ${sandbox.status}`);
+    console.log(`📊 Status: ${(sandbox as any).status}`);
 
     // Get root directory
     const rootDir = await sandbox.getUserRootDir();
