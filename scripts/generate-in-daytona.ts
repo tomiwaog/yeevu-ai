@@ -107,7 +107,7 @@ async function generateWebsite() {
   CRITICAL RULES:
   • Create components BEFORE importing them
   • Use proper spacing: py-16, mb-8, max-w-6xl mx-auto px-4
-  • Verify files exist before finishing
+  • Verify the required files exist before finishing
 
   EXAMPLE app/layout.tsx:
   import './globals.css'

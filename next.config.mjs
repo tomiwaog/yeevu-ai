@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
   transpilePackages: ['@daytonaio/sdk'],
   webpack: (config, { isServer }) => {
     // Handle ESM packages
