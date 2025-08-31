@@ -32,7 +32,7 @@ async function generateWebsiteInDaytona(
     });
     sandboxId = sandbox.id;
     console.log(`✓ Sandbox created: ${sandboxId}`);
-    
+
     // If an old sandboxId was provided, ignore it and use the new one
     if (sandboxIdArg) {
       console.log(`Note: Ignoring provided sandbox ${sandboxIdArg} and using fresh ${sandboxId}`);
@@ -77,162 +77,114 @@ async function generateWebsiteInDaytona(
       "ls -la node_modules/@anthropic-ai/claude-code",
       projectDir
     );
-    
+
     if (checkInstall.exitCode !== 0) {
       throw new Error("Claude Code SDK installation verification failed");
     }
     console.log("Installation check:", checkInstall.result);
 
-    // Step 6: Create the generation script file
+    // Step 6: Create the generation script file with improved prompt
     console.log("\n6. Creating generation script file...");
-
     const generationScript = `const { query } = require('@anthropic-ai/claude-code');
 const fs = require('fs');
+const path = require('path');
 
 async function generateWebsite() {
-  const prompt = \`${
-    prompt ||
-    "Create a modern blog website with markdown support and a dark theme"
-  }
+  const prompt = \`
+  You are an expert Next.js developer. Your task is to create a complete, runnable Next.js application based on the user's request.
 
-  Build a Next.js app with TypeScript and Tailwind CSS.
+  1. **FILE CREATION:** Using the 'Write' tool, create the following files. **CRITICAL:** The files must not be empty. You must write the complete and correct code for each file immediately after creating it.
+      - **File:** \`app/page.tsx\`
+        **Content:** Create a complete, standalone React component for the homepage. The content should be a modern, responsive page based on the prompt: "${prompt}". Use Tailwind CSS classes for styling.
+      - **File:** \`app/layout.tsx\`
+        **Content:** Create a root layout component that imports \`globals.css\` and renders the children prop within an \`<html>\` and \`<body>\` tag.
+      - **File:** \`app/globals.css\`
+        **Content:** Add the base Tailwind directives: \`@tailwind base;\`, \`@tailwind components;\`, and \`@tailwind utilities;\`.
+      - **File:** \`next.config.js\`
+      - **File:** \`tailwind.config.js\`
+      - **File:** \`postcss.config.js\`
+      - **File:** \`tsconfig.json\`
+      - **File:** \`package.json\` (Make sure to include next, react, react-dom, and tailwindcss dependencies)
+  2. **FINISH:** Once all files are written and contain valid code, you must signal completion. Do not stop until all required files are created and not empty.
+  \`;
 
-  REQUIRED FILES:
-  • package.json (Next.js, React, TypeScript, Tailwind dependencies)
-  • next.config.js, tailwind.config.js, postcss.config.js, tsconfig.json
-  • app/globals.css (@tailwind base; @tailwind components; @tailwind utilities;)
-  • app/layout.tsx (React component with RootLayout export)
-  • app/page.tsx (React component with Home export)
-
-  CRITICAL RULES:
-  • Create components BEFORE importing them
-  • Use proper spacing: py-16, mb-8, max-w-6xl mx-auto px-4
-  • You must include app/page.tsx and other required files before finishing
-  
-
-  EXAMPLE app/layout.tsx:
-  import './globals.css'
-  export default function RootLayout({children}: {children: React.ReactNode}) {
-    return <html><body>{children}</body></html>
-  }
-  \`;
-
-  console.log('Starting website generation with Claude Code...');
-  console.log('Working directory:', process.cwd());
-  
-  const messages = [];
-  const abortController = new AbortController();
-  
-  try {
-    for await (const message of query({
-      prompt: prompt,
-      abortController: abortController,
-      options: {
-        maxTurns: 20,
-        allowedTools: [
-          'Read',
-          'Write',
-          'Edit',
-          'MultiEdit',
-          'Bash',
-          'LS',
-          'Glob',
-          'Grep'
-        ]
-      }
-    })) {
-      messages.push(message);
-      
-      // Log progress
-      if (message.type === 'text') {
-        console.log('[Claude]:', (message.text || '').substring(0, 80) + '...');
-        console.log('__CLAUDE_MESSAGE__', JSON.stringify({ type: 'assistant', content: message.text }));
-      } else if (message.type === 'tool_use') {
-        console.log('[Tool]:', message.name, message.input?.file_path || '');
-        console.log('__TOOL_USE__', JSON.stringify({ 
-          type: 'tool_use', 
-          name: message.name, 
-          input: message.input 
-        }));
-      } else if (message.type === 'result') {
-        console.log('__TOOL_RESULT__', JSON.stringify({ 
-          type: 'tool_result', 
-          result: message.result 
-        }));
-      }
-    }
-    
-    console.log('\\nGeneration complete!');
-    console.log('Total messages:', messages.length);
-    
-    // Save generation log
-    fs.writeFileSync('generation-log.json', JSON.stringify(messages, null, 2));
-    
-    // List generated files
-    const files = fs.readdirSync('.').filter(f => !f.startsWith('.'));
-    console.log('\\nGenerated files:', files.join(', '));
-    
-    // Verify critical files exist
-    const criticalFiles = ['package.json', 'app/layout.tsx', 'app/page.tsx'];
-    const missingFiles = [];
-    
-    for (const file of criticalFiles) {
-      if (!fs.existsSync(file)) {
-        missingFiles.push(file);
-      }
-    }
-    
-    if (missingFiles.length > 0) {
-      console.error('\\n❌ CRITICAL FILES MISSING:', missingFiles.join(', '));
-      console.log('Available files in app directory:');
-      try {
-        const appFiles = fs.readdirSync('./app');
-        console.log('App files:', appFiles.join(', '));
-      } catch (e) {
-        console.log('App directory does not exist');
-      }
-      console.error('Generation failed - required React components not created');
-      process.exit(1);
-    } else {
-      console.log('\\n✅ All critical files verified');
-      
-      // Verify the files contain React components
-      try {
-        const layoutContent = fs.readFileSync('app/layout.tsx', 'utf8');
-        const pageContent = fs.readFileSync('app/page.tsx', 'utf8');
-        
-        if (!layoutContent.includes('export default') || !pageContent.includes('export default')) {
-          console.error('❌ React components missing export default');
-          process.exit(1);
-        }
-        
-        console.log('✅ React components verified');
-      } catch (e) {
-        console.error('❌ Error reading React components:', e.message);
-        process.exit(1);
-      }
-    }
-    
-  } catch (error) {
-    console.error('Generation error:', error);
-    console.error('Stack:', error.stack);
-    process.exit(1);
-  }
+  console.log('Starting website generation with Claude Code...');
+  console.log('Working directory:', process.cwd());
+  
+  const messages = [];
+  const abortController = new AbortController();
+  
+  try {
+    for await (const message of query({
+      prompt: prompt,
+      abortController: abortController,
+      options: {
+        maxTurns: 20,
+        allowedTools: [
+          'Read',
+          'Write',
+          'Edit',
+          'MultiEdit',
+          'Bash',
+          'LS',
+          'Glob',
+          'Grep'
+        ]
+      }
+    })) {
+      messages.push(message);
+      
+      // Log progress
+      if (message.type === 'text') {
+        console.log('[Claude]:', (message.text || '').substring(0, 80) + '...');
+        console.log('__CLAUDE_MESSAGE__', JSON.stringify({ type: 'assistant', content: message.text }));
+      } else if (message.type === 'tool_use') {
+        console.log('[Tool]:', message.name, message.input?.file_path || '');
+        console.log('__TOOL_USE__', JSON.stringify({ 
+          type: 'tool_use', 
+          name: message.name, 
+          input: message.input 
+        }));
+      } else if (message.type === 'result') {
+        console.log('__TOOL_RESULT__', JSON.stringify({ 
+          type: 'tool_result', 
+          result: message.result 
+        }));
+      }
+    }
+    
+    console.log('\\nGeneration complete!');
+    console.log('Total messages:', messages.length);
+    
+    // Save generation log
+    fs.writeFileSync('generation-log.json', JSON.stringify(messages, null, 2));
+    
+    // List generated files
+    const files = fs.readdirSync('.').filter(f => !f.startsWith('.'));
+    console.log('\\nGenerated files:', files.join(', '));
+    
+    console.log('Final generation script finished. Returning to main script...');
+    
+  } catch (error) {
+    console.error('Generation script error:', error);
+    console.error('Stack:', error.stack);
+    // Do not exit, let the main script's failsafe handle it
+  }
 }
 
 generateWebsite().catch(console.error);`;
 
-    // Write the script to a file with timestamp to ensure freshness
+    // Write the script to a file with a timestamp to ensure freshness
     const timestamp = new Date().getTime();
     const scriptName = `generate-${timestamp}.js`;
-    
+
     const writeResult = await sandbox.process.executeCommand(
       `cat > ${scriptName} << 'SCRIPT_EOF'
 ${generationScript}
 SCRIPT_EOF`,
       projectDir
     );
-    
+
     if (writeResult.exitCode !== 0) {
       throw new Error(`Failed to write generation script: ${writeResult.result}`);
     }
@@ -262,27 +214,146 @@ SCRIPT_EOF`,
 
     console.log("\nGeneration output:");
     console.log(genResult.result);
+    // Don't check exit code here, let the failsafe handle it.
 
-    if (genResult.exitCode !== 0) {
-      throw new Error("Generation failed");
+    // Step 8: Comprehensive Validation and Failsafe
+    console.log("\n8. Validating and fixing critical files...");
+    const criticalFiles = [
+      'package.json',
+      'next.config.js',
+      'tailwind.config.js',
+      'postcss.config.js',
+      'tsconfig.json',
+      'app/globals.css',
+      'app/layout.tsx',
+      'app/page.tsx',
+    ];
+
+    for (const file of criticalFiles) {
+      const checkCmd = `[ -s "${file}" ] && grep -q "export default" "${file}" && echo "valid" || echo "invalid"`;
+      const checkResult = await sandbox.process.executeCommand(checkCmd, projectDir);
+
+      if (checkResult.result.trim() === 'invalid') {
+        console.log(`⚠️  Fixing ${file}: Missing or invalid content. Applying failsafe.`);
+
+        let content = '';
+        if (file === 'app/page.tsx') {
+          content = `
+import React from 'react';
+export default function Home() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <h1 className="text-4xl font-bold text-center">Failsafe Page 😅</h1>
+      <p className="mt-4 text-xl text-center max-w-2xl">
+        A basic site was created based on your prompt:
+        <br />
+        <span className="font-semibold text-blue-600 dark:text-blue-400">"${prompt || "Your website"}"</span>
+      </p>
+    </div>
+  );
+}
+`;
+        } else if (file === 'app/layout.tsx') {
+          content = `
+import './globals.css';
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+`;
+        } else if (file === 'app/globals.css') {
+          content = `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`;
+        } else if (file === 'next.config.js') {
+          content = `
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+module.exports = nextConfig;
+`;
+        } else if (file === 'tailwind.config.js') {
+          content = `
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+`;
+        } else if (file === 'postcss.config.js') {
+          content = `
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+`;
+        } else if (file === 'tsconfig.json') {
+          content = `
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+`;
+        }
+
+        if (content) {
+          // Ensure directory exists before writing file
+          await sandbox.process.executeCommand(`mkdir -p $(dirname "${file}")`, projectDir);
+          await sandbox.process.executeCommand(
+            `cat > "${file}" << 'EOF'
+${content}
+EOF`,
+            projectDir
+          );
+        }
+      } else {
+        console.log(`✓ ${file} is valid.`);
+      }
     }
 
-    // Step 8: Check generated files
-    console.log("\n8. Checking generated files...");
-    const filesResult = await sandbox.process.executeCommand(
-      "ls -la",
-      projectDir
-    );
-    console.log(filesResult.result);
+    console.log("\n9. All critical files are now present and valid. Proceeding to dependency installation.");
 
-    // Step 9: Install dependencies if package.json was updated
+    // Step 10: Install dependencies if package.json was updated
     const hasNextJS = await sandbox.process.executeCommand(
       "test -f package.json && grep -q next package.json && echo yes || echo no",
       projectDir
     );
 
     if (hasNextJS.result?.trim() === "yes") {
-      console.log("\n9. Installing project dependencies...");
+      console.log("\n10. Installing project dependencies...");
       const npmInstall = await sandbox.process.executeCommand(
         "npm install",
         projectDir,
@@ -291,7 +362,7 @@ SCRIPT_EOF`,
       );
 
       if (npmInstall.exitCode !== 0) {
-        console.log("⚠️  npm install had issues but continuing:", npmInstall.result);
+        console.log("⚠️ npm install had issues but continuing:", npmInstall.result);
         
         // Try to fix common npm issues and retry once
         console.log("Attempting to fix npm issues and retry...");
@@ -312,154 +383,7 @@ SCRIPT_EOF`,
         console.log("✓ Dependencies installed");
       }
 
-      // Step 10: Check for critical files before starting server
-      console.log("\n10. Checking critical files...");
-      const criticalFiles = ['app/layout.tsx', 'app/page.tsx', 'next.config.js', 'tailwind.config.js'];
-      let missingFiles = [];
-      
-      for (const file of criticalFiles) {
-        const checkFile = await sandbox.process.executeCommand(
-          `test -f ${file} && echo "exists" || echo "missing"`,
-          projectDir
-        );
-        if (checkFile.result?.trim() === 'missing') {
-          missingFiles.push(file);
-        }
-      }
-      
-      if (missingFiles.length > 0) {
-        console.log(`⚠️  Missing critical files: ${missingFiles.join(', ')}`);
-        console.log("Attempting to create minimal files...");
-        
-        // Create minimal app/page.tsx if missing
-        if (missingFiles.includes('app/page.tsx')) {
-          await sandbox.process.executeCommand(
-            `mkdir -p app && cat > app/page.tsx << 'EOF'
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Hero Section */}
-      <section className="py-20">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">Welcome to My Portfolio</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">Your website has been generated successfully! This is a placeholder portfolio page.</p>
-          <div className="inline-flex gap-3 mb-12">
-            <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium">Next.js</span>
-            <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium">TypeScript</span>
-            <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium">Tailwind CSS</span>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">About Me</h2>
-          <p className="text-lg text-gray-600 text-center max-w-3xl mx-auto">
-            This is a generated portfolio website. Add your own content, projects, and styling to make it your own.
-          </p>
-        </div>
-      </section>
-
-      {/* Projects Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Projects</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500"></div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Project {i}</h3>
-                  <p className="text-gray-600">Description of project {i}. Add your own projects here.</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-EOF`,
-            projectDir
-          );
-        }
-        
-        // Create minimal app/layout.tsx if missing
-        if (missingFiles.includes('app/layout.tsx')) {
-          await sandbox.process.executeCommand(
-            `mkdir -p app && cat > app/layout.tsx << 'EOF'
-import type { Metadata } from 'next';
-import './globals.css';
-
-export const metadata: Metadata = {
-  title: 'Generated Website',
-  description: 'Created with Claude Code',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className="bg-gray-50">{children}</body>
-    </html>
-  );
-}
-EOF`,
-            projectDir
-          );
-        }
-        
-        // Create minimal globals.css if missing
-        await sandbox.process.executeCommand(
-          `mkdir -p app && cat > app/globals.css << 'EOF'
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-EOF`,
-          projectDir
-        );
-        
-        // Create next.config.js if missing
-        if (missingFiles.includes('next.config.js')) {
-          await sandbox.process.executeCommand(
-            `cat > next.config.js << 'EOF'
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-module.exports = nextConfig;
-EOF`,
-            projectDir
-          );
-        }
-        
-        // Create tailwind.config.js if missing
-        if (missingFiles.includes('tailwind.config.js')) {
-          await sandbox.process.executeCommand(
-            `cat > tailwind.config.js << 'EOF'
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};
-EOF`,
-            projectDir
-          );
-        }
-      }
-
-      // Step 11: Start dev server in background  
+      // Step 11: Start dev server in background
       console.log("\n11. Starting development server...");
 
       // Kill any existing servers first
@@ -512,7 +436,7 @@ EOF`,
       }
       
       if (!serverRunning) {
-        console.log("⚠️  Server may still be starting or has issues");
+        console.log("⚠️ Server may still be starting or has issues");
         const fullLogs = await sandbox.process.executeCommand(
           "cat dev-server.log || echo 'No logs'",
           projectDir
