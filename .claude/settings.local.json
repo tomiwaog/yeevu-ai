@@ -7,7 +7,9 @@
       "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\app/**)",
       "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\app\\generate/**)",
       "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone/**)"
+      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone/**)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

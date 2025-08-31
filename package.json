@@ -1,22 +1,38 @@
 {
-  "name": "lovable-clone",
+  "name": "yeevu-ai",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "cd yeevu-ui && npm run dev",
     "build": "cd yeevu-ui && npm run build",
-    "start": "cd yeevu-ui && npm run start"
+    "start": "cd yeevu-ui && npm run start",
+    "lint": "cd yeevu-ui && npm run lint",
+    "install-deps": "npm install && cd yeevu-ui && npm install --no-package-lock",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Yeevu AI - AI-powered code generation platform",
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.39",
-    "@types/node": "^24.0.10",
+    "@daytonaio/sdk": "^0.21.5",
     "adm-zip": "^0.5.16",
+    "dotenv": "^17.0.1",
+    "lucide-react": "^0.263.1",
+    "next": "^15.0.0",
+    "react": "^18",
+    "react-dom": "^18",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
+    "@types/node": "^24.0.10",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
   }
 }
