@@ -1,6 +1,15 @@
 import { NextRequest } from "next/server";
 import { Daytona } from "@daytonaio/sdk";
 
+// Configuration constants
+const TIMEOUTS = {
+  SDK_INSTALL: 180000,     // 3 minutes
+  SDK_VERIFICATION: 30000, // 30 seconds
+  GENERATION: 240000,      // 4 minutes (reduced from 10 minutes)
+  DEPENDENCY_INSTALL: 300000, // 5 minutes
+  SERVER_STARTUP: 10000    // 10 seconds wait + health check
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
@@ -41,11 +50,24 @@ export async function POST(req: NextRequest) {
           })}\n\n`)
         );
 
-        // Create sandbox
-        const sandbox = await daytona.create({
-          public: true,
-          image: "node:20",
-        });
+        // CRITICAL: Create sandbox with error handling
+        let sandbox;
+        try {
+          sandbox = await daytona.create({
+            public: true,
+            image: "node:20",
+          });
+          console.log("[API] Sandbox created successfully:", sandbox.id);
+        } catch (error: any) {
+          console.error("[API] CRITICAL FAILURE: Sandbox creation failed:", error);
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: "Failed to create Daytona sandbox. Please check your Daytona configuration."
+            })}\n\n`)
+          );
+          throw new Error(`Sandbox creation failed: ${error.message}`);
+        }
 
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
@@ -75,12 +97,12 @@ export async function POST(req: NextRequest) {
           })}\n\n`)
         );
 
-        // Install Claude Code SDK and CLI
+        // Install Claude Code SDK (local only)
         const installResult = await sandbox.process.executeCommand(
-          "npm install @anthropic-ai/claude-code@latest && npm install -g @anthropic-ai/claude-code",
+          "npm install @anthropic-ai/claude-code@latest",
           projectDir,
           undefined,
-          180000
+          TIMEOUTS.SDK_INSTALL
         );
 
         console.log("[API] Install result:", {
@@ -88,23 +110,70 @@ export async function POST(req: NextRequest) {
           result: installResult.result?.substring(0, 500) + "..."
         });
 
+        // CRITICAL: Exit early if SDK installation fails
         if (installResult.exitCode !== 0) {
-          console.error("[API] Install failed:", installResult.result);
-          throw new Error("Failed to install LLM SDK");
+          console.error("[API] CRITICAL FAILURE: SDK installation failed:", installResult.result);
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: "Failed to install Claude Code SDK. Generation cannot continue."
+            })}\n\n`)
+          );
+          throw new Error(`Failed to install LLM SDK: ${installResult.result}`);
         }
 
-        // Debug: Check what was actually installed
+        // CRITICAL: Verify local SDK installation before proceeding
         const checkInstallResult = await sandbox.process.executeCommand(
-          "ls -la node_modules/@anthropic-ai/ && echo '=== CLI Check ===' && which claude-code || echo 'CLI not found'",
+          "ls -la node_modules/@anthropic-ai/ && echo '=== Package JSON Check ===' && cat node_modules/@anthropic-ai/claude-code/package.json | head -5 2>/dev/null || echo 'Package JSON not found' && echo '=== Version Check ===' && node -e \"try { const pkg = require('@anthropic-ai/claude-code/package.json'); console.log('SDK version:', pkg.version); } catch(e) { console.log('Version check: FAILED -', e.message); }\" && echo '=== Node Require Check ===' && node -e \"try { require('@anthropic-ai/claude-code'); console.log('SDK require: SUCCESS'); } catch(e) { console.log('SDK require: FAILED -', e.message); }\"",
           projectDir,
           undefined,
-          30000
+          TIMEOUTS.SDK_VERIFICATION
         );
 
         console.log("[API] Installation check:", {
           exitCode: checkInstallResult.exitCode,
           result: checkInstallResult.result
         });
+
+        // Exit early if SDK verification fails - check local package only
+        const hasPackageJson = !checkInstallResult.result?.includes('Package JSON not found');
+        const hasVersion = checkInstallResult.result?.includes('SDK version:');
+        const hasRequireAccess = checkInstallResult.result?.includes('SDK require: SUCCESS');
+        
+        // Extract version for logging
+        const versionMatch = checkInstallResult.result?.match(/SDK version: (.+)/);
+        const installedVersion = versionMatch ? versionMatch[1] : 'unknown';
+        
+        console.log("[API] SDK Verification Results:", {
+          hasPackageJson,
+          hasVersion,
+          installedVersion,
+          hasRequireAccess,
+          exitCode: checkInstallResult.exitCode
+        });
+
+        if (checkInstallResult.exitCode !== 0 || !hasPackageJson || !hasVersion || !hasRequireAccess) {
+          console.error("[API] CRITICAL FAILURE: SDK verification failed");
+          console.error("[API] Package JSON found:", hasPackageJson);
+          console.error("[API] Version accessible:", hasVersion);
+          console.error("[API] Node require works:", hasRequireAccess);
+          console.error("[API] Full installation check result:", checkInstallResult.result);
+          
+          let errorMessage = "Claude Code SDK installation failed: ";
+          if (!hasPackageJson) errorMessage += "Package not properly installed. ";
+          if (!hasVersion) errorMessage += "Version info not accessible. ";
+          if (!hasRequireAccess) errorMessage += "Node.js cannot require the package. ";
+          
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: errorMessage + "Generation cannot continue."
+            })}\n\n`)
+          );
+          throw new Error(`SDK verification failed - ${errorMessage}`);
+        }
+
+        console.log(`[API] ✓ Claude Code SDK v${installedVersion} verified successfully`);
 
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
@@ -356,20 +425,64 @@ SCRIPT_EOF`,
           })}\n\n`)
         );
 
-        // Run generation script and parse output
-        const genProcess = sandbox.process.executeCommand(
-          "node generate.js",
-          projectDir,
-          {
-            ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-            NODE_PATH: `${projectDir}/node_modules`,
-          },
-          600000
-        );
+        // CRITICAL: Run generation with reduced timeout and proper error handling
+        let result;
+        try {
+          console.log("[API] Starting generation script with 4-minute timeout...");
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "progress",
+              message: "🤖 Running AI generation (max 4 minutes)..."
+            })}\n\n`)
+          );
 
-        // Stream the output as it comes
-        // Note: This is a simplified version - the real implementation would need to stream the process output
-        const result = await genProcess;
+          const genProcess = sandbox.process.executeCommand(
+            "node generate.js",
+            projectDir,
+            {
+              ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+              NODE_PATH: `${projectDir}/node_modules`,
+            },
+            TIMEOUTS.GENERATION
+          );
+
+          result = await genProcess;
+          
+          // CRITICAL: Exit early if generation script fails
+          if (result.exitCode !== 0) {
+            console.error("[API] CRITICAL FAILURE: Generation script failed with exit code:", result.exitCode);
+            console.error("[API] Generation script output:", result.result);
+            await writer.write(
+              encoder.encode(`data: ${JSON.stringify({
+                type: "error",
+                message: `AI generation failed with exit code ${result.exitCode}. Please check the logs.`
+              })}\n\n`)
+            );
+            throw new Error(`Generation failed with exit code ${result.exitCode}: ${result.result}`);
+          }
+
+          console.log("[API] Generation script completed successfully");
+        } catch (error: any) {
+          console.error("[API] CRITICAL FAILURE: Generation script error:", error);
+          
+          if (error.message?.includes('timeout') || error.message?.includes('504')) {
+            await writer.write(
+              encoder.encode(`data: ${JSON.stringify({
+                type: "error",
+                message: "AI generation timed out after 4 minutes. Please try a simpler prompt or try again."
+              })}\n\n`)
+            );
+            throw new Error("Generation timed out - please try a simpler prompt");
+          }
+          
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: "AI generation failed. Please try again."
+            })}\n\n`)
+          );
+          throw error;
+        }
 
         // Parse the output for special markers and track files created
         const lines = result.result?.split('\n') || [];
@@ -464,12 +577,6 @@ SCRIPT_EOF`,
           console.log(`[API] ${expected}: Generated=${wasGenerated}, Exists=${actuallyExists}`);
         }
 
-        if (result.exitCode !== 0) {
-          console.error("[API] Generation script failed with exit code:", result.exitCode);
-          console.error("[API] Script output:", result.result);
-          throw new Error(`Generation failed with exit code ${result.exitCode}: ${result.result}`);
-        }
-
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
             type: "progress",
@@ -477,13 +584,21 @@ SCRIPT_EOF`,
           })}\n\n`)
         );
 
-        // Install dependencies
-        const installDepsResult = await sandbox.process.executeCommand("npm install", projectDir, undefined, 300000);
+        // CRITICAL: Install dependencies with early exit on failure
+        const installDepsResult = await sandbox.process.executeCommand("npm install", projectDir, undefined, TIMEOUTS.DEPENDENCY_INSTALL);
         
         if (installDepsResult.exitCode !== 0) {
-          console.error("[API] npm install failed:", installDepsResult.result);
+          console.error("[API] CRITICAL FAILURE: npm install failed:", installDepsResult.result);
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: "Failed to install project dependencies. Generation incomplete."
+            })}\n\n`)
+          );
           throw new Error(`npm install failed: ${installDepsResult.result}`);
         }
+
+        console.log("[API] Dependencies installed successfully");
 
         await writer.write(
           encoder.encode(`data: ${JSON.stringify({
@@ -613,18 +728,29 @@ SCRIPT_EOF`,
         );
 
         // Wait for server to start and check if it's running
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, TIMEOUTS.SERVER_STARTUP));
         
-        // Check if server is running
+        // CRITICAL: Check if server is running with early exit on failure
         const serverCheck = await sandbox.process.executeCommand(`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || echo "FAILED"`, projectDir);
         console.log("[API] Server health check:", serverCheck.result);
         
         if (serverCheck.result?.includes('FAILED') || !serverCheck.result?.includes('200')) {
-          // Try to get server logs for debugging
+          console.error("[API] CRITICAL FAILURE: Development server failed to start");
+          
+          // Get server logs for debugging
           const logs = await sandbox.process.executeCommand(`tail -50 dev-server.log`, projectDir);
           console.log("[API] Server logs:", logs.result);
-          throw new Error(`Development server failed to start properly. Server response: ${serverCheck.result}`);
+          
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              message: "Development server failed to start. Please check the generated code for errors."
+            })}\n\n`)
+          );
+          throw new Error(`Development server failed to start properly. Server response: ${serverCheck.result}. Logs: ${logs.result?.substring(0, 500)}`);
         }
+
+        console.log("[API] Development server started successfully");
 
         // Get preview URL
         const preview = await sandbox.getPreviewLink(3000);
