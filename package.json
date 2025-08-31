@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "cd yeevu-ui && next dev",
-    "build": "cd yeevu-ui && next build",
-    "start": "cd yeevu-ui && next start",
-    "lint": "cd yeevu-ui && next lint",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
