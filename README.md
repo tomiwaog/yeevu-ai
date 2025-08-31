@@ -1,7 +1,7 @@
 # Yeevu AI
 
 
-An AI-powered code generation platform built with the Claude Code SDK, featuring isolated code generation using Daytona sandboxes. a.k.a Lovable Clone
+An AI-powered code generation platform built with the Claude Code SDK, featuring isolated code generation using Daytona sandboxes.
 
 
 ## Features
