@@ -1,5 +1,100 @@
+# Dependencies
 node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Environment variables (CRITICAL - contains API keys)
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Next.js build outputs
+.next/
+out/
 dist/
+build/
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Temporary folders
+tmp/
+temp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Deployment
+.vercel
+.netlify
+
+# Claude Code
+.claude/
+
+# Downloaded projects (contains generated code)
+yeevu-ui/temp-downloads/
+yeevu-ui/simple-project/
+

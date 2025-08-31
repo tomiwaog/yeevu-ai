@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "cd yeevu-ui && npm run dev",
-    "build": "cd yeevu-ui && npm run build",
-    "start": "cd yeevu-ui && npm run start",
-    "lint": "cd yeevu-ui && npm run lint",
-    "install-deps": "npm install && cd yeevu-ui && npm install --no-package-lock",
+    "dev": "cd yeevu-ui && next dev",
+    "build": "cd yeevu-ui && next build",
+    "start": "cd yeevu-ui && next start",
+    "lint": "cd yeevu-ui && next lint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
