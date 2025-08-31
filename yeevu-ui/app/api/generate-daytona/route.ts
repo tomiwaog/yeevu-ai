@@ -5,7 +5,7 @@ import { Daytona } from "@daytonaio/sdk";
 const TIMEOUTS = {
   SDK_INSTALL: 180000,     // 3 minutes
   SDK_VERIFICATION: 30000, // 30 seconds
-  GENERATION: 240000,      // 4 minutes (reduced from 10 minutes)
+  GENERATION: 600000,      // 10 minutes (increased back up for complex generations)
   DEPENDENCY_INSTALL: 300000, // 5 minutes
   SERVER_STARTUP: 10000    // 10 seconds wait + health check
 };
@@ -428,11 +428,11 @@ SCRIPT_EOF`,
         // CRITICAL: Run generation with reduced timeout and proper error handling
         let result;
         try {
-          console.log("[API] Starting generation script with 4-minute timeout...");
+          console.log("[API] Starting generation script with 10-minute timeout...");
           await writer.write(
             encoder.encode(`data: ${JSON.stringify({
               type: "progress",
-              message: "🤖 Running AI generation (max 4 minutes)..."
+              message: "🤖 Running AI generation (max 10 minutes)..."
             })}\n\n`)
           );
 
@@ -469,7 +469,7 @@ SCRIPT_EOF`,
             await writer.write(
               encoder.encode(`data: ${JSON.stringify({
                 type: "error",
-                message: "AI generation timed out after 4 minutes. Please try a simpler prompt or try again."
+                message: "AI generation timed out after 10 minutes. Please try a simpler prompt or try again."
               })}\n\n`)
             );
             throw new Error("Generation timed out - please try a simpler prompt");
