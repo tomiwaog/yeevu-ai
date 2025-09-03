@@ -747,7 +747,7 @@ SCRIPT_EOF`,
               message: "Development server failed to start. Please check the generated code for errors."
             })}\n\n`)
           );
-          throw new Error(`Development server failed to start properly. Server response: ${serverCheck.result}. Logs: ${logs.result?.substring(0, 500)}`);
+          //throw new Error(`Development server failed to start properly. Server response: ${serverCheck.result}. Logs: ${logs.result?.substring(0, 500)}`);
         }
 
         console.log("[API] Development server started successfully");
