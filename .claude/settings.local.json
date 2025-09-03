@@ -1,16 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\app\\api\\download/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\scripts/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\app/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui\\app\\generate/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone\\yeevu-ui/**)",
-      "Read(\\\\WSL.LOCALHOST\\UBUNTU\\home\\tee\\lovable-clone/**)",
       "Bash(npm install)",
       "Bash(npm run build:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
