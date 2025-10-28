@@ -21,8 +21,8 @@ export default function Navbar() {
           <a href="/contact/" className="hover:text-white transition-colors">
             Enterprise
           </a>
-          <a href="https://yeevu.com/blog/" className="hover:text-white transition-colors">
-            Learn
+          <a href="https://cal.com/tkwebhosts/yeevu-ai-demo" className="hover:text-white transition-colors">
+            Book a Demo
           </a>
           <a href="https://yeevu.com/contact/" className="hover:text-white transition-colors">
             Contact
