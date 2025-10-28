@@ -7,12 +7,20 @@ import Navbar from "@/components/Navbar";
 export default function Home() {
   const router = useRouter();
   const [prompt, setPrompt] = useState("");
+  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4");
+
+  const models = [
+    { id: "claude-sonnet-4", name: "Claude Sonnet 4", description: "Latest Anthropic model" },
+    { id: "claude-3.5-haiku", name: "Claude 3.5 Haiku", description: "Fast and efficient" },
+    { id: "gpt-4", name: "GPT-4o", description: "OpenAI's latest model" },
+    { id: "gpt-3.5", name: "GPT-3.5 Turbo", description: "Fast and cost-effective" }
+  ];
 
   const handleGenerate = () => {
     if (!prompt.trim()) return;
 
-    // Navigate to generate page with prompt
-    router.push(`/generate?prompt=${encodeURIComponent(prompt)}`);
+    // Navigate to generate page with prompt and selected model
+    router.push(`/generate?prompt=${encodeURIComponent(prompt)}&model=${selectedModel}`);
   };
 
   return (
@@ -38,6 +46,29 @@ export default function Home() {
             Turn your ideas into production-ready code in minutes. Powered by
             Yeevu AI's advanced AI capabilities.
           </p>
+
+          {/* Model Selection */}
+          <div className="mb-8 max-w-2xl mx-auto">
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              Choose AI Model
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {models.map((model) => (
+                <button
+                  key={model.id}
+                  onClick={() => setSelectedModel(model.id)}
+                  className={`p-4 rounded-xl border transition-all duration-200 text-left ${
+                    selectedModel === model.id
+                      ? 'border-blue-500 bg-blue-500/10 text-white'
+                      : 'border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-700/50'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{model.name}</div>
+                  <div className="text-xs text-gray-400 mt-1">{model.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Input Section */}
           <div className="relative max-w-2xl mx-auto">

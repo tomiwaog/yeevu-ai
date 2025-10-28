@@ -4,7 +4,11 @@
       "Bash(npm install)",
       "Bash(npm run build:*)",
       "Bash(mv:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(./test-quick.sh:*)",
+      "Read(//home/tee/**)"
     ],
     "deny": [],
     "ask": []

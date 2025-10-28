@@ -27,6 +27,9 @@ export default function Navbar() {
           <a href="https://yeevu.com/contact/" className="hover:text-white transition-colors">
             Contact
           </a>
+          <a href="https://aisolutions.yeevu.com/" className="hover:text-white transition-colors">
+            Other AI Solutions
+          </a>
         </div>
       </div>
 

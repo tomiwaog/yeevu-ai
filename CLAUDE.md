@@ -1,12 +1,24 @@
 ## Project Goals
-- I am building Yeevu AI (A lovable clone), an AI-powered code generation platform using the claude-code sdk
+- I am building Yeevu AI (A lovable clone), an AI-powered code generation platform using the Anthropic SDK
 
 ## Preferences
 - don't try to run the script with your own bash tool. Write the script and tell me how to execute it, asking me for its output instead.
 
+## Critical Rules for AI Generation APIs
+- **NEVER add blocking validation that throws errors during file generation**
+- **DO NOT interrupt AI generation with premature file existence checks**
+- File validation should only LOG warnings, never THROW errors that stop the generation process
+- Let the AI complete its full generation cycle before doing any validation
+- Example of WRONG approach: `throw new Error("Critical files missing")` during generation
+- Example of CORRECT approach: `console.log("Warning: files not yet generated, continuing...")`
+- AI generates files through tool calls - validation exceptions will break the process
+
 ## Progress so far
-- We have a website that takes in a prompt, uses claude code SDK to write code. But currently, it directly modifies my websites code by adding it as a page. The next task we are going to work on is making the code gen happen in an isolated environment and opening the dev server there.
-- We have created a way to create sandboxes using daytona and preview them in using the getPreviewLink() function. The script scripts/test-preview-url.ts confirms this.
+- ✅ **Isolated Code Generation**: Code generation happens in Daytona sandboxes (no local file modifications)
+- ✅ **Migrated to Anthropic SDK**: Switched from `@anthropic-ai/claude-code` to `@anthropic-ai/sdk` for better reliability
+- ✅ **Custom Tool Implementation**: Built manual tool handlers for full control over code generation
+- ✅ **Live Preview System**: Created sandbox preview functionality using Daytona's `getPreviewLink()`
+- ✅ **Multi-turn Conversations**: Generation script manages conversation loops with up to 30 turns
 
 ## Recent Feature Additions
 
@@ -31,15 +43,18 @@
 - ✅ **Daytona Tier Requirements**: Documented TIER 2 Organization requirements ($20 wallet top-up + GitHub connection) for live preview
 
 ### Technical Infrastructure
-- ✅ **API Integration**: `/api/generate-daytona` endpoint for sandbox creation and code generation
+- ✅ **API Integration**: `/api/generate-multimodel` endpoint for sandbox creation and code generation
+- ✅ **Anthropic SDK Integration**: Uses `@anthropic-ai/sdk` with custom tool handlers for reliable code generation
 - ✅ **Environment Configuration**: Proper `.env` setup for API keys (Anthropic + Daytona)
 - ✅ **Script Management**: Download scripts for project management (`download-simple.ts`, `download-project.ts`)
+- ✅ **Custom Tool Implementation**: Manual tool handlers (Write, Read, Edit, Bash, Glob, Grep) in `scripts/generate-anthropic-sdk.js`
 
 ## Current Architecture Flow
 1. **User Input**: User enters prompt on main page → navigates to `/generate?prompt=<user_prompt>`
-2. **Code Generation**: Generate page calls `/api/generate-daytona` → creates Daytona sandbox → Claude Code SDK generates code
-3. **Preview & Deployment**: Generated website available at preview URL → user can view, download, or deploy
-4. **File Management**: Generated files isolated in Daytona sandbox → local codebase remains unchanged
+2. **Code Generation**: Generate page calls `/api/generate-multimodel` → creates Daytona sandbox → installs `@anthropic-ai/sdk` → runs custom generation script
+3. **Multi-turn Conversation**: Generation script manages conversation loop, executing tool calls until website is complete
+4. **Preview & Deployment**: Generated website available at preview URL → user can view, download, or deploy
+5. **File Management**: Generated files isolated in Daytona sandbox → local codebase remains unchanged
 
 ## Next Steps / Future Enhancements
 - [ ] Add more deployment platform integrations

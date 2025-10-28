@@ -1,18 +1,21 @@
 # Yeevu AI Generation Scripts
 
-Clean, minimal scripts for generating websites using Claude Code SDK in Daytona sandboxes.
+Clean, minimal scripts for generating websites using Anthropic SDK in Daytona sandboxes.
 
 ## Core Functionality
 
 ### 1. Main Generation - API Integration
-**Purpose:** Website generation happens through `/api/generate-daytona` endpoint
+**Purpose:** Website generation happens through `/api/generate-multimodel` endpoint
 
 **Features:**
-- ✅ **Pure Claude Code SDK** - No hardcoded templates
-- ✅ **Dynamic Generation** - Claude generates all HTML/CSS/JS based on user prompt
+- ✅ **Anthropic SDK** - Direct SDK integration with custom tool handlers
+- ✅ **Dynamic Generation** - AI generates all files based on user prompt through tool calls
+- ✅ **Multi-turn Conversations** - Manages conversation loops until website is complete
 - ✅ **Sandbox Isolation** - Code generation happens in Daytona sandbox
 - ✅ **Live Preview** - Get preview URLs for generated websites
 - ✅ **Streaming Progress** - Real-time feedback during generation
+
+**Script:** `generate-anthropic-sdk.js` - Custom tool implementation (Write, Read, Edit, Bash, Glob, Grep)
 
 **Usage:** Called automatically through the web interface at `/generate?prompt=your-prompt`
 
@@ -111,8 +114,9 @@ User Prompt → API Route → Claude Code SDK → Generated Website
 
 ## Development Notes
 
-- **Simplified Architecture** - Removed unnecessary complex abstractions
-- **Single API Route** - Only `/api/generate-daytona` for generation
+- **Simplified Architecture** - Direct Anthropic SDK integration with custom tool handlers
+- **Single API Route** - Only `/api/generate-multimodel` for generation
+- **Better Control** - Manual tool implementation for full control over generation process
 - **Better Error Handling** - JSON parsing errors are caught and logged
 - **Minimal Dependencies** - Only what's essential for core functionality
-- **TypeScript** for type safety and better debugging
+- **TypeScript & JavaScript** for type safety and better debugging

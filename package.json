@@ -15,11 +15,13 @@
   "description": "Yeevu AI - AI-powered code generation platform",
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.39",
+    "@anthropic-ai/sdk": "^0.67.0",
     "@daytonaio/sdk": "^0.21.5",
     "adm-zip": "^0.5.16",
     "dotenv": "^17.0.1",
     "lucide-react": "^0.263.1",
     "next": "^15.0.0",
+    "node-fetch": "^3.3.2",
     "react": "^18",
     "react-dom": "^18",
     "tsx": "^4.20.3",

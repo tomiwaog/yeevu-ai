@@ -22,9 +22,9 @@ An AI-powered code generation platform built with the Claude Code SDK, featuring
 - Form navigates to `/generate?prompt=<user_prompt>`
 
 ### 2. Code Generation
-- Generate page (`app/generate/page.tsx`) calls `/api/generate-daytona`
+- Generate page (`app/generate/page.tsx`) calls `/api/generate-multimodel`
 - API creates a new Daytona sandbox with isolated environment
-- Claude Code SDK generates code directly in the sandbox
+- Anthropic SDK with custom tool handlers generates code directly in the sandbox
 
 ### 3. Preview & Deployment
 - Generated website becomes available at a preview URL

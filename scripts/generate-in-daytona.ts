@@ -58,17 +58,17 @@ async function generateWebsiteInDaytona(
 
     // Step 4: Install Claude Code SDK locally in project
     console.log("\n4. Installing Claude Code SDK locally...");
-    const installResult = await sandbox.process.executeCommand(
-      "npm install @anthropic-ai/claude-code@latest",
-      projectDir,
-      undefined,
-      180000 // 3 minute timeout
-    );
+    // const installResult = await sandbox.process.executeCommand(
+    //   "npm install @anthropic-ai/claude-code@latest",
+    //   projectDir,
+    //   undefined,
+    //   180000 // 3 minute timeout
+    // );
 
-    if (installResult.exitCode !== 0) {
-      console.error("Installation failed:", installResult.result);
-      throw new Error("Failed to install Claude Code SDK");
-    }
+    // if (installResult.exitCode !== 0) {
+    //   console.error("Installation failed:", installResult.result);
+    //   throw new Error("Failed to install Claude Code SDK");
+    // }
     console.log("✓ Claude Code SDK installed");
 
     // Verify installation

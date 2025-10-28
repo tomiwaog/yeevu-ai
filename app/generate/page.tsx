@@ -30,6 +30,7 @@ function GeneratePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const prompt = searchParams.get("prompt") || "";
+  const selectedModel = searchParams.get("model") || "claude-sonnet-4";
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -38,6 +39,13 @@ function GeneratePageContent() {
   const [error, setError] = useState<string | null>(null);
   const [showHostingOptions, setShowHostingOptions] = useState(false);
   const [permanentUrl, setPermanentUrl] = useState<string | null>(null);
+  
+  const modelNames = {
+    'claude-sonnet-4': 'Claude Sonnet 4',
+    'claude-3.5-haiku': 'Claude 3.5 Haiku',
+    'gpt-4': 'GPT-4o',
+    'gpt-3.5': 'GPT-3.5 Turbo'
+  };
   
   // Enhanced data for left pane
   const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([
@@ -132,7 +140,7 @@ function GeneratePageContent() {
 
   const generateWebsite = async () => {
     try {
-      const response = await fetch("/api/generate-daytona", {
+      const response = await fetch("/api/generate-multimodel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -330,7 +338,9 @@ function GeneratePageContent() {
               <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-800 mb-3">
                 <div className="text-xs text-gray-400 mb-1">Sandbox</div>
                 <div className="text-xs font-mono text-gray-300">{sandboxInfo.id.slice(0, 12)}...</div>
-                <div className="text-xs text-gray-500">{projectInfo.framework} • {projectInfo.language}</div>
+                <div className="text-xs text-gray-500">
+                  {projectInfo.framework} • {projectInfo.language} • {modelNames[selectedModel] || selectedModel}
+                </div>
               </div>
             )}
             
