@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { Daytona } from "@daytonaio/sdk";
 import fs from "fs";
 import path from "path";
+import { checkLimit, increment } from "@/lib/rate-limiter";
+import { isLocalhost } from "@/lib/is-localhost";
 
 // Configuration constants
 const TIMEOUTS = {
@@ -23,6 +25,20 @@ export async function POST(req: NextRequest) {
         JSON.stringify({ error: "Prompt is required" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // Check rate limit (skip for localhost)
+    if (!isLocalhost(req)) {
+      const limit = checkLimit();
+      if (!limit.allowed) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Daily limit reached. Try again tomorrow.",
+            remaining: 0
+          }),
+          { status: 429, headers: { "Content-Type": "application/json" }}
+        );
+      }
     }
 
     if (!process.env.DAYTONA_API_KEY || !process.env.ANTHROPIC_API_KEY) {
@@ -67,6 +83,11 @@ export async function POST(req: NextRequest) {
             image: "node:20",
           });
           console.log("[API] Sandbox created successfully:", sandbox.id);
+          
+          // Increment rate limit counter after successful sandbox creation
+          if (!isLocalhost(req)) {
+            increment();
+          }
         } catch (error: any) {
           console.error("[API] CRITICAL FAILURE: Sandbox creation failed:", error);
           await writer.write(

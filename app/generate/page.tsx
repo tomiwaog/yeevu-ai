@@ -319,6 +319,14 @@ function GeneratePageContent() {
               </div>
             </div>
             
+            {/* Rate Limit Notice */}
+            <div className="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-2 mb-3">
+              <div className="text-xs text-yellow-400 flex items-center gap-1">
+                <span>⚡</span>
+                <span>Free tier: Limited generations per day (shared quota)</span>
+              </div>
+            </div>
+            
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-gray-900 rounded-lg p-2 border border-gray-800">
