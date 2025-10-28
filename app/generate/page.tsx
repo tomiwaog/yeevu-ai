@@ -339,7 +339,7 @@ function GeneratePageContent() {
                 <div className="text-xs text-gray-400 mb-1">Sandbox</div>
                 <div className="text-xs font-mono text-gray-300">{sandboxInfo.id.slice(0, 12)}...</div>
                 <div className="text-xs text-gray-500">
-                  {projectInfo.framework} • {projectInfo.language} • {modelNames[selectedModel] || selectedModel}
+                  {projectInfo.framework} • {projectInfo.language} • {modelNames[selectedModel as keyof typeof modelNames] || selectedModel}
                 </div>
               </div>
             )}
