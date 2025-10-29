@@ -94,6 +94,7 @@ Thumbs.db
 # Claude Code
 .claude/
 
+
 # Downloaded projects (contains generated code)
 yeevu-ui/temp-downloads/
 yeevu-ui/simple-project/
