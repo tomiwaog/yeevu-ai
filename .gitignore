@@ -93,6 +93,7 @@ Thumbs.db
 
 # Claude Code
 .claude/
+Claude.md
 
 
 # Downloaded projects (contains generated code)
